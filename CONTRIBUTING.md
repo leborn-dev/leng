@@ -244,3 +244,10 @@ It's a quick process, we promise!
 [stackoverflow]: http://stackoverflow.com/questions/tagged/angularjs
 
 [![Analytics](https://ga-beacon.appspot.com/UA-8594346-11/angular.js/CONTRIBUTING.md?pixel)](https://github.com/igrigorik/ga-beacon)
+
+
+---
+
+## Leborn fork notice
+
+This project is now part of the [Leborn](https://github.com/leborn-dev) initiative. The general Leborn contribution guidelines also apply. See [`LEBORN.md`](./LEBORN.md).

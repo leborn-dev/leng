@@ -1,3 +1,7 @@
+> **Notice:** This is **LeNg**, a [Leborn](https://github.com/leborn-dev) fork of AngularJS 1.x. We are reviving this project for the AI era. See [`LEBORN.md`](./LEBORN.md) and [`NOTICE`](./NOTICE) for details.
+
+---
+
 AngularJS [![CircleCI](https://circleci.com/gh/angular/angular.js/tree/master.svg?style=shield)](https://circleci.com/gh/angular/workflows/angular.js/tree/master)
 =========
 
