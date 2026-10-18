@@ -20,7 +20,8 @@
     "test:firebase": "node tests/firebase-functions.cjs",
     "test:docs-fs": "node tests/docs-mkdir.cjs",
     "test:docs-markdown": "node tests/docs-markdown.cjs",
-    "test:webdriver-zip": "node tests/webdriver-zip.cjs"
+    "test:webdriver-zip": "node tests/webdriver-zip.cjs",
+    "test:firebase-cli": "node tests/firebase-cli.cjs"
   },
   "devDependencies": {
     "angular-benchpress": "0.x.x",
@@ -39,7 +40,7 @@
     "dgeni-packages": "^0.26.5",
     "eslint-plugin-promise": "^3.6.0",
     "event-stream": "~3.1.0",
-    "firebase-tools": "^9.3.0",
+    "firebase-tools": "15.34.0",
     "glob": "^6.0.1",
     "google-code-prettify": "1.0.1",
     "grunt": "^1.4.1",

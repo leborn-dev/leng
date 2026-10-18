@@ -8,7 +8,10 @@ Firebase functions declare Node22, firebase-functions7.4+, firebase-admin14.5+
 and (for code.angularjs.org) Google Cloud Storage7.19+. Both entry points
 explicitly import `firebase-functions/v1`, preserving the existing first-
 generation HTTP/storage trigger definitions. Firebase Admin is a required SDK
-peer. These are dependency/runtime changes, not a production deployment;
+peer. Root Firebase CLI15.34.0 replaces CLI9, whose actual runtime selector
+rejects Node22. Both firebase.json files explicitly declare the functions source
+for the current CLI. Its runtime selector/config parser, version and deploy-help
+commands are tested locally with isolated CLI profile directories. These are dependency/runtime changes, not a production deployment;
 deploying requires selecting Node22 and testing real cloud integrations.
 
 The root Jasmine runner is pinned to2.0.0: the next patch2.0.1 uses an obsolete
@@ -62,8 +65,8 @@ complete package build passes all documentation link checks.
 ## Audit scope and residuals
 
 Yarn audit counts advisories per resolution path, unlike GitHub alert counts.
-The root tree drops1065->267 paths (remaining critical24/high144/moderate86/
-low13). These root dependencies are development build/test/deployment tools;
+The root tree drops1065->200 paths (remaining critical19/high110/moderate63/
+low8). These root dependencies are development build/test/deployment tools;
 the AngularJS framework source itself is outside dependency-graph coverage.
 The unchanged old browser runtime is not certified safe by this audit.
 
