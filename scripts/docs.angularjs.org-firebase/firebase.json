@@ -17,25 +17,34 @@
     "headers": [
       {
         "source": "/examples/**.csp/*.html",
-        "headers": [{
-          "key": "Content-Security-Policy",
-          "value": "default-src 'self'"
-        }]
+        "headers": [
+          {
+            "key": "Content-Security-Policy",
+            "value": "default-src 'self'"
+          }
+        ]
       },
       {
         "source": "/Error404.html",
-        "headers" : [{
-          "key" : "X-Robots-Tag",
-          "value" : "noindex"
-        }]
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex"
+          }
+        ]
       },
       {
         "source": "/@(partials|examples)/**",
-        "headers" : [{
-          "key" : "X-Robots-Tag",
-          "value" : "noindex"
-        }]
+        "headers": [
+          {
+            "key": "X-Robots-Tag",
+            "value": "noindex"
+          }
+        ]
       }
     ]
+  },
+  "functions": {
+    "source": "functions"
   }
 }

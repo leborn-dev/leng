@@ -1,6 +1,6 @@
 'use strict';
 
-const functions = require('firebase-functions');
+const functions = require('firebase-functions/v1');
 const fs = require('fs');
 
 const BROWSER_CACHE_DURATION = 60 * 60;
