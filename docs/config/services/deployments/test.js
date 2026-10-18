@@ -18,7 +18,7 @@ module.exports = function testDeployment(getVersion) {
       '../angular-sanitize.js',
       '../angular-touch.js',
       '../angular-animate.js',
-      'components/marked-' + getVersion('marked') + '/lib/marked.js',
+      'components/marked-' + getVersion('marked') + '/lib/marked.umd.js',
       'js/angular-bootstrap/dropdown-toggle.js',
       'components/lunr-' + getVersion('lunr') + '/lunr.js',
       'components/google-code-prettify-' + getVersion('google-code-prettify') + '/src/prettify.js',

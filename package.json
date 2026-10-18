@@ -16,7 +16,11 @@
   "scripts": {
     "commit": "git-cz",
     "test-i18n": "jasmine-node i18n/spec",
-    "test-i18n-ucd": "jasmine-node i18n/ucd/spec"
+    "test-i18n-ucd": "jasmine-node i18n/ucd/spec",
+    "test:firebase": "node tests/firebase-functions.cjs",
+    "test:docs-fs": "node tests/docs-mkdir.cjs",
+    "test:docs-markdown": "node tests/docs-markdown.cjs",
+    "test:webdriver-zip": "node tests/webdriver-zip.cjs"
   },
   "devDependencies": {
     "angular-benchpress": "0.x.x",
@@ -58,7 +62,7 @@
     "gulp-uglify": "^3.0.2",
     "gulp-util": "^3.0.1",
     "jasmine-core": "^2.8.0",
-    "jasmine-node": "^2.0.0",
+    "jasmine-node": "2.0.0",
     "jasmine-reporters": "^2.2.0",
     "jquery": "3.5.1",
     "jquery-2.1": "npm:jquery@2.1.4",
@@ -79,7 +83,7 @@
     "lodash": "~4.17.21",
     "log4js": "^0.6.27",
     "lunr": "^0.7.2",
-    "marked": "~0.3.0",
+    "marked": "4.3.0",
     "node-html-encoder": "0.0.2",
     "npm-run": "^4.1.0",
     "open-sans-fontface": "^1.4.0",
@@ -100,13 +104,18 @@
     "sorted-object": "^1.0.0",
     "stringmap": "^0.2.2"
   },
-  "dependencies": {},
+  "dependencies": {
+    "graceful-fs": "^4.2.3"
+  },
   "resolutions": {
     "//1": "`natives@1.1.0` does not work with Node.js 10.x on Windows 10",
     "//2": "(E.g. see https://github.com/gulpjs/gulp/issues/2162 and https://github.com/nodejs/node/issues/25132.)",
     "natives": "1.1.6",
     "//3": "`graceful-fs` needs to be pinned to support gulp 3, on Node v12+",
-    "graceful-fs": "^4.2.3"
+    "graceful-fs": "^4.2.3",
+    "dgeni-packages/mkdirp-promise/mkdirp": "0.5.6",
+    "dgeni-packages/marked": "4.3.0",
+    "protractor/webdriver-manager/adm-zip": "0.6.1"
   },
   "commitplease": {
     "style": "angular",

@@ -21,7 +21,7 @@ module.exports = function jqueryDeployment(getVersion) {
       '../angular-sanitize.min.js',
       '../angular-touch.min.js',
       '../angular-animate.min.js',
-      'components/marked-' + getVersion('marked') + '/lib/marked.js',
+      'components/marked-' + getVersion('marked') + '/lib/marked.umd.js',
       'js/angular-bootstrap/dropdown-toggle.min.js',
       'components/lunr-' + getVersion('lunr') + '/lunr.min.js',
       'components/google-code-prettify-' + getVersion('google-code-prettify') + '/src/prettify.js',
