@@ -331,6 +331,7 @@ function baseExtend(dst, objs, deep) {
     var keys = Object.keys(obj);
     for (var j = 0, jj = keys.length; j < jj; j++) {
       var key = keys[j];
+      if (key === '__proto__') continue;
       var src = obj[key];
 
       if (deep && isObject(src)) {
@@ -344,7 +345,7 @@ function baseExtend(dst, objs, deep) {
           dst[key] = src.clone();
         } else {
           if (key !== '__proto__') {
-            if (!isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
+            if (!Object.prototype.hasOwnProperty.call(dst, key) || !isObject(dst[key])) dst[key] = isArray(src) ? [] : {};
             baseExtend(dst[key], [src], true);
           }
         }
@@ -1805,7 +1806,7 @@ function bootstrap(element, modules, config) {
       throw ngMinErr(
           'btstrpd',
           'App already bootstrapped with this element \'{0}\'',
-          tag.replace(/</,'&lt;').replace(/>/,'&gt;'));
+          tag.replace(/</g,'&lt;').replace(/>/g,'&gt;'));
     }
 
     modules = modules || [];

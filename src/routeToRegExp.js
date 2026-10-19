@@ -18,7 +18,7 @@ function routeToRegExp(path, opts) {
   var keys = [];
 
   var pattern = path
-    .replace(/([().])/g, '\\$1')
+    .replace(/([().\\])/g, '\\$1')
     .replace(/(\/)?:(\w+)(\*\?|[?*])?/g, function(_, slash, key, option) {
       var optional = option === '?' || option === '*?';
       var star = option === '*' || option === '*?';

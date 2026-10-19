@@ -95,7 +95,7 @@ function minErr(module, ErrorConstructor) {
   ErrorConstructor = ErrorConstructor || Error;
 
   var url = 'https://errors.angularjs.org/"NG_VERSION_FULL"/';
-  var regex = url.replace('.', '\\.') + '[\\s\\S]*';
+  var regex = url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '[\\s\\S]*';
   var errRegExp = new RegExp(regex, 'g');
 
   return function() {

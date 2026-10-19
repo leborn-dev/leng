@@ -5,7 +5,7 @@ const path = require('node:path');
 const {createRequire} = require('node:module');
 const fromProtractor = createRequire(require.resolve('protractor/package.json'));
 const fromManager = createRequire(fromProtractor.resolve('webdriver-manager/package.json'));
-const AdmZip = require(process.env.TEST_ADMZIP_MODULE || fromManager.resolve('adm-zip'));
+const AdmZip = require(fromManager.resolve('adm-zip'));
 const temp = fs.mkdtempSync(path.join(os.tmpdir(), 'leng-driver-zip-'));
 try {
   const archive = new AdmZip();
