@@ -177,7 +177,6 @@ function kebabToCamel(name) {
 var SINGLE_TAG_REGEXP = /^<([\w-]+)\s*\/?>(?:<\/\1>|)$/;
 var HTML_REGEXP = /<|&#?\w+;/;
 var TAG_NAME_REGEXP = /<([\w:-]+)/;
-var XHTML_TAG_REGEXP = /<(?!area|br|col|embed|hr|img|input|link|meta|param)(([\w:-]+)[^>]*)\/>/gi;
 
 // Table parts need to be wrapped with `<table>` or they're
 // stripped to their contents when put in a div.
@@ -228,6 +227,62 @@ function jqLiteHasData(node) {
   return false;
 }
 
+// Convert only actual HTML start tags. Attribute values, comments, raw-text and
+// foreign content keep their original parsing semantics.
+function jqLiteExpandXHTML(html) {
+  var output = '', index = 0, rawText = null;
+  var lower = html.toLowerCase();
+  while (index < html.length) {
+    if (rawText) {
+      if (rawText === 'plaintext') return output + html.slice(index);
+      var close = lower.indexOf('</' + rawText, index);
+      while (close >= 0 && !/[\s/>]/.test(html.charAt(close + rawText.length + 2))) {
+        close = lower.indexOf('</' + rawText, close + 2);
+      }
+      if (close < 0) return output + html.slice(index);
+      output += html.slice(index, close);
+      index = close;
+      rawText = null;
+    }
+    var start = html.indexOf('<', index);
+    if (start < 0) return output + html.slice(index);
+    output += html.slice(index, start);
+    if (html.slice(start, start + 4) === '<!--') {
+      var commentEnd = html.indexOf('-->', start + 4);
+      if (commentEnd < 0) return output + html.slice(start);
+      output += html.slice(start, commentEnd + 3);
+      index = commentEnd + 3;
+      continue;
+    }
+    var quote = null, end = start + 1;
+    for (; end < html.length; end++) {
+      var character = html.charAt(end);
+      if (quote) {
+        if (character === quote) quote = null;
+      } else if (character === '"' || character === '\'') {
+        quote = character;
+      } else if (character === '>') {
+        break;
+      }
+    }
+    if (end === html.length) return output + html.slice(start);
+    var token = html.slice(start, end + 1);
+    var match = /^<([a-z][\w:-]*)(?=[\s/>])/i.exec(token);
+    if (match) {
+      var tag = match[1].toLowerCase();
+      if (/^(?:script|style|textarea|title|xmp|iframe|noembed|noframes|plaintext|svg|math)$/.test(tag)) {
+        if (!/^(?:svg|math)$/.test(tag) || token.slice(-2) !== '/>') rawText = tag;
+      } else if (token.slice(-2) === '/>' &&
+          !/^(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag)) {
+        token = token.slice(0, -2) + '></' + match[1] + '>';
+      }
+    }
+    output += token;
+    index = end + 1;
+  }
+  return output;
+}
+
 function jqLiteBuildFragment(html, context) {
   var tmp, tag, wrap, finalHtml,
       fragment = context.createDocumentFragment(),
@@ -241,7 +296,7 @@ function jqLiteBuildFragment(html, context) {
     tmp = fragment.appendChild(context.createElement('div'));
     tag = (TAG_NAME_REGEXP.exec(html) || ['', ''])[1].toLowerCase();
     finalHtml = JQLite.legacyXHTMLReplacement ?
-      html.replace(XHTML_TAG_REGEXP, '<$1></$2>') :
+      jqLiteExpandXHTML(html) :
       html;
 
     if (msie < 10) {

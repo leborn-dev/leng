@@ -1245,6 +1245,13 @@ describe('input', function() {
 
 
   describe('datetime-local', function() {
+    function normalizedDateTime(value) {
+      var nativeInput = window.document.createElement('input');
+      nativeInput.type = 'datetime-local';
+      nativeInput.value = value;
+      return nativeInput.value;
+    }
+
     it('should throw if model is not a Date object', function() {
       var inputElm = helper.compileInput('<input type="datetime-local" ng-model="lunchtime"/>');
 
@@ -1263,7 +1270,7 @@ describe('input', function() {
         $rootScope.halfSecondToNextYear = new Date(2013, 11, 31, 23, 59, 59, 500);
       });
 
-      expect(inputElm.val()).toBe('2013-12-31T23:59:59.500');
+      expect(inputElm.val()).toBe(normalizedDateTime('2013-12-31T23:59:59.500'));
     });
 
 
@@ -1477,7 +1484,7 @@ describe('input', function() {
       $rootScope.$apply(function() {
         $rootScope.time = new Date(1970, 0, 1, 15, 41, 50, 50);
       });
-      expect(inputElm.val()).toBe('1970-01-01T15:41:50.050');
+      expect(inputElm.val()).toBe(normalizedDateTime('1970-01-01T15:41:50.050'));
     });
 
 
@@ -1490,13 +1497,13 @@ describe('input', function() {
         $rootScope.threeFortyOnePm = new Date(1970, 0, 1, 15, 41, 50, 500);
       });
 
-      expect(inputElm.val()).toBe('1970-01-01T15:41:50.500');
+      expect(inputElm.val()).toBe(normalizedDateTime('1970-01-01T15:41:50.500'));
 
       $rootScope.$apply(function() {
         $rootScope.threeFortyOnePm = new Date(1970, 0, 1, 15, 41, 0, 500);
       });
 
-      expect(inputElm.val()).toBe('1970-01-01T15:41:00.500');
+      expect(inputElm.val()).toBe(normalizedDateTime('1970-01-01T15:41:00.500'));
 
       $rootScope.$apply(function() {
         $rootScope.threeFortyOnePm = new Date(1970, 0, 1, 15, 41, 50, 0);

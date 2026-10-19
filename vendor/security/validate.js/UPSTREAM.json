@@ -1,0 +1,24 @@
+{
+  "upstream": {
+    "name": "validate.js",
+    "version": "0.13.1",
+    "registry": "https://registry.npmjs.org/validate.js/0.13.1",
+    "tarball": "https://registry.npmjs.org/validate.js/-/validate.js-0.13.1.tgz",
+    "integrity": "sha512-PnFM3xiZ+kYmLyTiMgTYmU7ZHkjBZz2/+F0DaALc/uUtVzdCt1wAosvYJ5hFQi/hz8O4zb52FQhHZRC+uVkJ+g==",
+    "shasum": "b58bfac04a0f600a340f62e5227e70d95971e92a",
+    "gitHead": "40e06a1bafd2ce61dba37779ee77e796ad397b81"
+  },
+  "fork": "@leng/validate.js",
+  "advisories": [
+    "GHSA-rv73-9c8w-jp4c"
+  ],
+  "tests": [
+    "tests/security-forks.cjs"
+  ],
+  "updatePolicy": "Compare each patched source and generated browser/minified entry against the recorded upstream tarball; rerun root regression and full build before updating. Restore registry packages only when all listed issues have an upstream fix.",
+  "securitySourceDiff": {
+    "file": "SECURITY.patch",
+    "sha256": "71e6387c94890fe59ba070e3e9558a724a030a10c1fa814139717fa3e0c9d303",
+    "scope": "Runtime source changes against the integrity-verified upstream tarball; generated min/maps are rebuilt by scripts/rebuild-security-vendor.cjs. Manifest/provenance and unused upstream tree omissions are documented separately."
+  }
+}

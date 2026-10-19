@@ -14,3 +14,10 @@ Visit [angular.io](https://angular.io) for the actively supported Angular.
 | 1.3.x-1.7.x | :x:                | All support ended     |                                      |
 | 1.2.x       | :x:                | All support ended     | Last version to provide IE 8 support |
 | <1.2.0      | :x:                | All support ended     |                                      |
+
+## Local security maintenance
+
+This repository carries security patches and dependency updates for its local
+AngularJS build and hosted documentation. This does not change upstream
+AngularJS end-of-life status. See [the current maintenance record](DEPENDENCY-SECURITY.md)
+and [maintained fork provenance, limits and update requirements](vendor/security/README.md).

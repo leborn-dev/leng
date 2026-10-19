@@ -1,0 +1,346 @@
+--- a/dist/jquery.js
++++ b/dist/jquery.js
+@@ -210,7 +210,7 @@
+ 				copy = options[ name ];
+ 
+ 				// Prevent never-ending loop
+-				if ( target === copy ) {
++				if ( name === "__proto__" || target === copy ) {
+ 					continue;
+ 				}
+ 
+@@ -3536,7 +3536,7 @@
+ 	// Support: Android<4,
+ 	// Old WebKit does not have Object.preventExtensions/freeze method,
+ 	// return new empty object instead with no [[set]] accessor
+-	Object.defineProperty( this.cache = {}, 0, {
++	Object.defineProperty( this.cache = Object.create( null ), 0, {
+ 		get: function() {
+ 			return {};
+ 		}
+@@ -3549,6 +3549,18 @@
+ Data.accepts = jQuery.acceptData;
+ 
+ Data.prototype = {
++	// Expando metadata is an internal numeric key, never an inherited cache name.
++	getKey: function( owner ) {
++		var unlock = Object.prototype.hasOwnProperty.call( owner, this.expando ) &&
++			owner[ this.expando ];
++		return typeof unlock === "number" && unlock > 0 &&
++			unlock < Data.uid && unlock % 1 === 0 ? unlock : 0;
++	},
++	peek: function( owner ) {
++		var unlock = this.getKey( owner );
++		return unlock && Object.prototype.hasOwnProperty.call( this.cache, unlock ) ?
++			this.cache[ unlock ] : undefined;
++	},
+ 	key: function( owner ) {
+ 		// We can accept data for non-element nodes in modern browsers,
+ 		// but we should not, see #8335.
+@@ -3559,7 +3571,7 @@
+ 
+ 		var descriptor = {},
+ 			// Check if the owner object already has a cache key
+-			unlock = owner[ this.expando ];
++			unlock = this.getKey( owner );
+ 
+ 		// If not, create one
+ 		if ( !unlock ) {
+@@ -3573,13 +3585,20 @@
+ 			// Support: Android<4
+ 			// Fallback to a less secure definition
+ 			} catch ( e ) {
+-				descriptor[ this.expando ] = unlock;
+-				jQuery.extend( owner, descriptor );
++				try {
++					descriptor[ this.expando ] = unlock;
++					jQuery.extend( owner, descriptor );
++				} catch ( ignored ) {}
++			}
++			// A frozen/read-only forged expando cannot retain an internal key.
++			// Use the existing non-persistent key-zero path without orphan caches.
++			if ( this.getKey( owner ) !== unlock ) {
++				return 0;
+ 			}
+ 		}
+ 
+ 		// Ensure the cache object
+-		if ( !this.cache[ unlock ] ) {
++		if ( !Object.prototype.hasOwnProperty.call( this.cache, unlock ) ) {
+ 			this.cache[ unlock ] = {};
+ 		}
+ 
+@@ -3695,15 +3714,17 @@
+ 	},
+ 	hasData: function( owner ) {
+ 		return !jQuery.isEmptyObject(
+-			this.cache[ owner[ this.expando ] ] || {}
++			this.peek( owner ) || {}
+ 		);
+ 	},
+ 	discard: function( owner ) {
+-		if ( owner[ this.expando ] ) {
+-			delete this.cache[ owner[ this.expando ] ];
++		var unlock = this.getKey( owner );
++		if ( unlock ) {
++			delete this.cache[ unlock ];
+ 		}
+ 	}
+ };
++
+ var data_priv = new Data();
+ 
+ var data_user = new Data();
+@@ -4093,7 +4114,7 @@
+ 			elemData = data_priv.get( elem );
+ 
+ 		// Don't attach events to noData or text/comment nodes (but allow plain objects)
+-		if ( !elemData ) {
++		if ( !elemData || !data_priv.getKey( elem ) ) {
+ 			return;
+ 		}
+ 
+@@ -4925,7 +4946,7 @@
+ 	wrapMap = {
+ 
+ 		// Support: IE9
+-		option: [ 1, "<select multiple='multiple'>", "</select>" ],
++		option: [ 0, "", "" ],
+ 
+ 		thead: [ 1, "<table>", "</table>" ],
+ 		col: [ 2, "<table><colgroup>", "</colgroup></table>" ],
+@@ -5111,7 +5132,7 @@
+ 					// Deserialize a standard representation
+ 					tag = ( rtagName.exec( elem ) || [ "", "" ] )[ 1 ].toLowerCase();
+ 					wrap = wrapMap[ tag ] || wrapMap._default;
+-					tmp.innerHTML = wrap[ 1 ] + elem.replace( rxhtmlTag, "<$1></$2>" ) + wrap[ 2 ];
++					tmp.innerHTML = wrap[ 1 ] + elem + wrap[ 2 ];
+ 
+ 					// Descend through wrappers to the right content
+ 					j = wrap[ 0 ];
+@@ -5175,7 +5196,7 @@
+ 
+ 		for ( ; (elem = elems[ i ]) !== undefined; i++ ) {
+ 			if ( jQuery.acceptData( elem ) ) {
+-				key = elem[ data_priv.expando ];
++				key = data_priv.getKey( elem );
+ 
+ 				if ( key && (data = data_priv.cache[ key ]) ) {
+ 					if ( data.events ) {
+@@ -5196,7 +5217,7 @@
+ 				}
+ 			}
+ 			// Discard any remaining `user` data
+-			delete data_user.cache[ elem[ data_user.expando ] ];
++			data_user.discard( elem );
+ 		}
+ 	}
+ });
+@@ -5310,7 +5331,7 @@
+ 			if ( typeof value === "string" && !rnoInnerhtml.test( value ) &&
+ 				!wrapMap[ ( rtagName.exec( value ) || [ "", "" ] )[ 1 ].toLowerCase() ] ) {
+ 
+-				value = value.replace( rxhtmlTag, "<$1></$2>" );
++				value = value;
+ 
+ 				try {
+ 					for ( ; i < l; i++ ) {
+@@ -8212,7 +8233,10 @@
+ 			}
+ 
+ 			// Convert no matter what (that way responseXXX fields are always set)
+-			response = ajaxConvert( s, response, jqXHR, isSuccess );
++			if ( !isSuccess && jQuery.inArray( "script", s.dataTypes ) > -1 ) {
++                s.converters[ "text script" ] = function() {};
++            }
++            response = ajaxConvert( s, response, jqXHR, isSuccess );
+ 
+ 			// If successful, handle type chaining
+ 			if ( isSuccess ) {
+@@ -8665,6 +8689,10 @@
+ });
+ 
+ // Handle cache's special case and crossDomain
++jQuery.ajaxPrefilter( function( s ) {
++    if ( s.crossDomain ) { s.contents.script = false; }
++} );
++
+ jQuery.ajaxPrefilter( "script", function( s ) {
+ 	if ( s.cache === undefined ) {
+ 		s.cache = false;
+--- a/src/ajax/script.js
++++ b/src/ajax/script.js
+@@ -20,6 +20,10 @@
+ });
+ 
+ // Handle cache's special case and crossDomain
++jQuery.ajaxPrefilter( function( s ) {
++    if ( s.crossDomain ) { s.contents.script = false; }
++} );
++
+ jQuery.ajaxPrefilter( "script", function( s ) {
+ 	if ( s.cache === undefined ) {
+ 		s.cache = false;
+--- a/src/ajax.js
++++ b/src/ajax.js
+@@ -676,7 +676,10 @@
+ 			}
+ 
+ 			// Convert no matter what (that way responseXXX fields are always set)
+-			response = ajaxConvert( s, response, jqXHR, isSuccess );
++			if ( !isSuccess && jQuery.inArray( "script", s.dataTypes ) > -1 ) {
++                s.converters[ "text script" ] = function() {};
++            }
++            response = ajaxConvert( s, response, jqXHR, isSuccess );
+ 
+ 			// If successful, handle type chaining
+ 			if ( isSuccess ) {
+--- a/src/core.js
++++ b/src/core.js
+@@ -157,7 +157,7 @@
+ 				copy = options[ name ];
+ 
+ 				// Prevent never-ending loop
+-				if ( target === copy ) {
++				if ( name === "__proto__" || target === copy ) {
+ 					continue;
+ 				}
+ 
+--- a/src/data/Data.js
++++ b/src/data/Data.js
+@@ -8,7 +8,7 @@
+ 	// Support: Android<4,
+ 	// Old WebKit does not have Object.preventExtensions/freeze method,
+ 	// return new empty object instead with no [[set]] accessor
+-	Object.defineProperty( this.cache = {}, 0, {
++	Object.defineProperty( this.cache = Object.create( null ), 0, {
+ 		get: function() {
+ 			return {};
+ 		}
+@@ -21,6 +21,18 @@
+ Data.accepts = jQuery.acceptData;
+ 
+ Data.prototype = {
++	// Expando metadata is an internal numeric key, never an inherited cache name.
++	getKey: function( owner ) {
++		var unlock = Object.prototype.hasOwnProperty.call( owner, this.expando ) &&
++			owner[ this.expando ];
++		return typeof unlock === "number" && unlock > 0 &&
++			unlock < Data.uid && unlock % 1 === 0 ? unlock : 0;
++	},
++	peek: function( owner ) {
++		var unlock = this.getKey( owner );
++		return unlock && Object.prototype.hasOwnProperty.call( this.cache, unlock ) ?
++			this.cache[ unlock ] : undefined;
++	},
+ 	key: function( owner ) {
+ 		// We can accept data for non-element nodes in modern browsers,
+ 		// but we should not, see #8335.
+@@ -31,7 +43,7 @@
+ 
+ 		var descriptor = {},
+ 			// Check if the owner object already has a cache key
+-			unlock = owner[ this.expando ];
++			unlock = this.getKey( owner );
+ 
+ 		// If not, create one
+ 		if ( !unlock ) {
+@@ -45,13 +57,20 @@
+ 			// Support: Android<4
+ 			// Fallback to a less secure definition
+ 			} catch ( e ) {
+-				descriptor[ this.expando ] = unlock;
+-				jQuery.extend( owner, descriptor );
++				try {
++					descriptor[ this.expando ] = unlock;
++					jQuery.extend( owner, descriptor );
++				} catch ( ignored ) {}
++			}
++			// A frozen/read-only forged expando cannot retain an internal key.
++			// Use the existing non-persistent key-zero path without orphan caches.
++			if ( this.getKey( owner ) !== unlock ) {
++				return 0;
+ 			}
+ 		}
+ 
+ 		// Ensure the cache object
+-		if ( !this.cache[ unlock ] ) {
++		if ( !Object.prototype.hasOwnProperty.call( this.cache, unlock ) ) {
+ 			this.cache[ unlock ] = {};
+ 		}
+ 
+@@ -167,12 +186,13 @@
+ 	},
+ 	hasData: function( owner ) {
+ 		return !jQuery.isEmptyObject(
+-			this.cache[ owner[ this.expando ] ] || {}
++			this.peek( owner ) || {}
+ 		);
+ 	},
+ 	discard: function( owner ) {
+-		if ( owner[ this.expando ] ) {
+-			delete this.cache[ owner[ this.expando ] ];
++		var unlock = this.getKey( owner );
++		if ( unlock ) {
++			delete this.cache[ unlock ];
+ 		}
+ 	}
+ };
+--- a/src/event.js
++++ b/src/event.js
+@@ -48,7 +48,7 @@
+ 			elemData = data_priv.get( elem );
+ 
+ 		// Don't attach events to noData or text/comment nodes (but allow plain objects)
+-		if ( !elemData ) {
++		if ( !elemData || !data_priv.getKey( elem ) ) {
+ 			return;
+ 		}
+ 
+--- a/src/manipulation.js
++++ b/src/manipulation.js
+@@ -30,7 +30,7 @@
+ 	wrapMap = {
+ 
+ 		// Support: IE9
+-		option: [ 1, "<select multiple='multiple'>", "</select>" ],
++		option: [ 0, "", "" ],
+ 
+ 		thead: [ 1, "<table>", "</table>" ],
+ 		col: [ 2, "<table><colgroup>", "</colgroup></table>" ],
+@@ -216,7 +216,7 @@
+ 					// Deserialize a standard representation
+ 					tag = ( rtagName.exec( elem ) || [ "", "" ] )[ 1 ].toLowerCase();
+ 					wrap = wrapMap[ tag ] || wrapMap._default;
+-					tmp.innerHTML = wrap[ 1 ] + elem.replace( rxhtmlTag, "<$1></$2>" ) + wrap[ 2 ];
++					tmp.innerHTML = wrap[ 1 ] + elem + wrap[ 2 ];
+ 
+ 					// Descend through wrappers to the right content
+ 					j = wrap[ 0 ];
+@@ -280,7 +280,7 @@
+ 
+ 		for ( ; (elem = elems[ i ]) !== undefined; i++ ) {
+ 			if ( jQuery.acceptData( elem ) ) {
+-				key = elem[ data_priv.expando ];
++				key = data_priv.getKey( elem );
+ 
+ 				if ( key && (data = data_priv.cache[ key ]) ) {
+ 					if ( data.events ) {
+@@ -301,7 +301,7 @@
+ 				}
+ 			}
+ 			// Discard any remaining `user` data
+-			delete data_user.cache[ elem[ data_user.expando ] ];
++			data_user.discard( elem );
+ 		}
+ 	}
+ });
+@@ -415,7 +415,7 @@
+ 			if ( typeof value === "string" && !rnoInnerhtml.test( value ) &&
+ 				!wrapMap[ ( rtagName.exec( value ) || [ "", "" ] )[ 1 ].toLowerCase() ] ) {
+ 
+-				value = value.replace( rxhtmlTag, "<$1></$2>" );
++				value = value;
+ 
+ 				try {
+ 					for ( ; i < l; i++ ) {

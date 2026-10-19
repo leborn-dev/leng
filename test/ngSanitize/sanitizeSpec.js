@@ -669,3 +669,19 @@ describe('decodeEntities', function() {
     expect(text).toEqual('  a&b ');
   });
 });
+
+describe('CVE-2025-2336 SVG image media policies', function() {
+  beforeEach(module('ngSanitize'));
+  beforeEach(module(function($sanitizeProvider, $compileProvider) {
+    $sanitizeProvider.enableSvg(true);
+    $compileProvider.imgSrcSanitizationTrustedUrlList(/^https:\/\/good\.test\//);
+  }));
+  it('applies image rules to href and xlink:href while keeping allowed SVG', inject(function($sanitize) {
+    var rejected = $sanitize('<svg><image href="https://evil.test/image.svg"></image><image xlink:href="https://evil.test/image.svg"></image></svg>');
+    expect(rejected).not.toContain('https://evil.test');
+    var allowed = $sanitize('<svg><image href="https://good.test/image.svg"></image><image xlink:href="https://good.test/image.svg"></image></svg>');
+    expect(allowed).toContain('href="https://good.test/image.svg"');
+    expect(allowed).toContain('xlink:href="https://good.test/image.svg"');
+    expect($sanitize('<a href="https://evil.test/link">link</a>')).toContain('href="https://evil.test/link"');
+  }));
+});

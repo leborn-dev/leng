@@ -1,0 +1,175 @@
+--- a/index.js
++++ b/index.js
+@@ -1,6 +1,7 @@
+ 'use strict';
+ 
+ const stringify = require('./lib/stringify');
++const limits = require('./lib/limits');
+ const compile = require('./lib/compile');
+ const expand = require('./lib/expand');
+ const parse = require('./lib/parse');
+@@ -21,11 +22,13 @@
+ 
+ const braces = (input, options = {}) => {
+   let output = [];
++  if (Array.isArray(input) && input.length > limits.MAX_RESULTS) limits.fail();
+ 
+   if (Array.isArray(input)) {
+     for (const pattern of input) {
+       const result = braces.create(pattern, options);
+       if (Array.isArray(result)) {
++        if (output.length + result.length > limits.MAX_RESULTS) limits.fail();
+         output.push(...result);
+       } else {
+         output.push(result);
+--- a/lib/parse.js
++++ b/lib/parse.js
+@@ -1,6 +1,7 @@
+ 'use strict';
+ 
+ const stringify = require('./stringify');
++const limits = require('./limits');
+ 
+ /**
+  * Constants
+@@ -47,6 +48,7 @@
+   const length = input.length;
+   let index = 0;
+   let depth = 0;
++  let nodeCount = 0;
+   let value;
+ 
+   /**
+@@ -64,6 +66,8 @@
+       return;
+     }
+ 
++    if (stack.length > limits.MAX_DEPTH) limits.fail();
++    if (++nodeCount > limits.MAX_NODES) limits.fail();
+     block.nodes.push(node);
+     node.parent = block;
+     node.prev = prev;
+@@ -74,6 +78,7 @@
+   push({ type: 'bos' });
+ 
+   while (index < length) {
++    if (stack.length > limits.MAX_DEPTH) limits.fail();
+     block = stack[stack.length - 1];
+     value = advance();
+ 
+@@ -325,6 +330,7 @@
+   } while (stack.length > 0);
+ 
+   push({ type: 'eos' });
++  limits.checkAst(ast);
+   return ast;
+ };
+ 
+--- a/lib/compile.js
++++ b/lib/compile.js
+@@ -2,8 +2,10 @@
+ 
+ const fill = require('fill-range');
+ const utils = require('./utils');
++const limits = require('./limits');
+ 
+ const compile = (ast, options = {}) => {
++  limits.checkAst(ast);
+   const walk = (node, parent = {}) => {
+     const invalidBlock = utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+--- a/lib/expand.js
++++ b/lib/expand.js
+@@ -3,12 +3,16 @@
+ const fill = require('fill-range');
+ const stringify = require('./stringify');
+ const utils = require('./utils');
++const limits = require('./limits');
+ 
+ const append = (queue = '', stash = '', enclose = false) => {
+   const result = [];
++  let outputSize = 0;
+ 
+   queue = [].concat(queue);
+   stash = [].concat(stash);
++  if (queue.length > limits.MAX_RESULTS || stash.length > limits.MAX_RESULTS ||
++      queue.length * stash.length > limits.MAX_RESULTS) limits.fail();
+ 
+   if (!stash.length) return queue;
+   if (!queue.length) {
+@@ -23,7 +27,10 @@
+     } else {
+       for (let ele of stash) {
+         if (enclose === true && typeof ele === 'string') ele = `{${ele}}`;
+-        result.push(Array.isArray(ele) ? append(item, ele, enclose) : item + ele);
++        const value = Array.isArray(ele) ? append(item, ele, enclose) : item + ele;
++        outputSize += typeof value === 'string' ? value.length : value.reduce((n, str) => n + str.length, 0);
++        if (outputSize > limits.MAX_OUTPUT) limits.fail();
++        result.push(value);
+       }
+     }
+   }
+@@ -31,6 +38,7 @@
+ };
+ 
+ const expand = (ast, options = {}) => {
++  limits.checkAst(ast);
+   const rangeLimit = options.rangeLimit === undefined ? 1000 : options.rangeLimit;
+ 
+   const walk = (node, parent = {}) => {
+@@ -56,6 +64,9 @@
+ 
+     if (node.nodes && node.ranges > 0) {
+       const args = utils.reduce(node.nodes);
++      const step = Math.abs(Number(args[2] || options.step || 1));
++      const count = Math.abs(Number(args[1]) - Number(args[0])) / step + 1;
++      if (count > limits.MAX_RESULTS) limits.fail();
+ 
+       if (utils.exceedsLimit(...args, options.step, rangeLimit)) {
+         throw new RangeError('expanded array length exceeds range limit. Use options.rangeLimit to increase or disable the limit.');
+--- a/lib/stringify.js
++++ b/lib/stringify.js
+@@ -1,8 +1,10 @@
+ 'use strict';
+ 
+ const utils = require('./utils');
++const limits = require('./limits');
+ 
+ module.exports = (ast, options = {}) => {
++  limits.checkAst(ast);
+   const stringify = (node, parent = {}) => {
+     const invalidBlock = options.escapeInvalid && utils.isInvalidBrace(parent);
+     const invalidNode = node.invalid === true && options.escapeInvalid === true;
+--- /dev/null
++++ b/lib/limits.js
+@@ -0,0 +1,30 @@
++'use strict';
++// Local security fork: bound recursive walkers and allocation before work starts.
++const MAX_DEPTH = 128;
++const MAX_NODES = 10000;
++const MAX_RESULTS = 10000;
++const MAX_OUTPUT = 1024 * 1024;
++const fail = () => {
++  const error = new RangeError('Brace pattern exceeds the security resource limit');
++  error.code = 'ERR_BRACES_LIMIT';
++  throw error;
++};
++const checkAst = ast => {
++  const pending = [{node: ast, parent: undefined, depth: 0}];
++  const seen = new WeakSet();
++  let count = 0;
++  let size = 0;
++  while (pending.length) {
++    const {node, parent, depth} = pending.pop();
++    if (!node || typeof node !== 'object' || seen.has(node) || depth > MAX_DEPTH || ++count > MAX_NODES) fail();
++    seen.add(node);
++    if (node.value !== undefined && typeof node.value !== 'string') fail();
++    if (parent !== undefined && node.parent !== undefined && node.parent !== parent) fail();
++    if (typeof node.value === 'string' && (size += node.value.length) > MAX_OUTPUT) fail();
++    if (node.nodes) {
++      if (!Array.isArray(node.nodes) || node.nodes.length + count > MAX_NODES) fail();
++      for (let i = node.nodes.length - 1; i >= 0; --i) pending.push({node: node.nodes[i], parent: node, depth: depth + 1});
++    }
++  }
++};
++module.exports = {MAX_DEPTH, MAX_NODES, MAX_RESULTS, MAX_OUTPUT, fail, checkAst};

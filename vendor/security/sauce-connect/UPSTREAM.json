@@ -1,0 +1,16 @@
+{
+  "upstream": {
+    "name": "Sauce Connect",
+    "version": "5.5.3",
+    "source": "https://docs.saucelabs.com/secure-connections/sauce-connect-5/installation/",
+    "checksums": "https://saucelabs.com/downloads/sauce-connect/5.5.3/checksums",
+    "migration": "https://docs.saucelabs.com/secure-connections/sauce-connect-5/migrating/"
+  },
+  "replaces": {
+    "manifest": "sauce-connect: https://saucelabs.com/downloads/sc-4.6.2-linux.tar.gz",
+    "npmAdvisory": "sauce-connect <=0.1.1 downloads resources over HTTP",
+    "distinction": "The previous manifest directly installed an official HTTPS binary tarball, not the npm HTTP-downloader implementation. Its SC4 runtime was nevertheless obsolete. This adapter installs a supported SC5 release over HTTPS with pinned official SHA256, and preserves the project's legacy process interface."
+  },
+  "tests": ["tests/sauce-connect.cjs"],
+  "updatePolicy": "Choose a current official release; independently retrieve all platform SHA256 values from official documentation; update binary URLs and compatibility mappings; rerun archive verification/readiness/PID/termination tests and the actual supported-platform --version command."
+}

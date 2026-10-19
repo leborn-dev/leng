@@ -1,0 +1,32 @@
+{
+  "name": "@leng/validate.js",
+  "version": "0.13.1-leng.1",
+  "author": "Nicklas Ansman <nicklas@ansman.se>",
+  "description": "Declarative validations for JavaScript",
+  "main": "validate.js",
+  "typings": "validate.d.ts",
+  "homepage": "http://validatejs.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ansman/validate.js.git"
+  },
+  "files": [
+    "typings.json",
+    "validate.d.ts",
+    "validate.js",
+    "validate.min.js",
+    "validate.min.map"
+  ],
+  "keywords": [
+    "validation",
+    "validate",
+    "server",
+    "client"
+  ],
+  "license": "MIT",
+  "upstream": {
+    "name": "validate.js",
+    "version": "0.13.1"
+  },
+  "private": true
+}

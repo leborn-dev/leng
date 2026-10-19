@@ -587,7 +587,7 @@ describe('browser', function() {
       browser = new Browser(fakeWindow, fakeDocument, fakeLog, sniffer, taskTrackerFactory);
 
       // somehow, $location gets a version of this url where the = is no longer escaped, and tells the browser:
-      var initialUrlFixedByLocation = initialUrl.replace('%3D', '=');
+      var initialUrlFixedByLocation = initialUrl.replace(/%3D/g, '=');
       browser.url(initialUrlFixedByLocation, true, null);
       expect(browser.url()).toEqual(initialUrlFixedByLocation);
 

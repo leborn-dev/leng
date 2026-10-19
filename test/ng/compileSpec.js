@@ -812,8 +812,8 @@ describe('$compile', function() {
             var parts, elementName;
 
             parts = text
-              .replace('<', '')
-              .replace('>', '')
+              .replace(/^</, '')
+              .replace(/>$/, '')
               .split(' ');
             elementName = parts.shift();
             parts.sort();
