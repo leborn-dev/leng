@@ -8,7 +8,7 @@ function Data() {
 	// Support: Android<4,
 	// Old WebKit does not have Object.preventExtensions/freeze method,
 	// return new empty object instead with no [[set]] accessor
-	Object.defineProperty( this.cache = {}, 0, {
+	Object.defineProperty( this.cache = Object.create( null ), 0, {
 		get: function() {
 			return {};
 		}
@@ -21,6 +21,18 @@ Data.uid = 1;
 Data.accepts = jQuery.acceptData;
 
 Data.prototype = {
+	// Expando metadata is an internal numeric key, never an inherited cache name.
+	getKey: function( owner ) {
+		var unlock = Object.prototype.hasOwnProperty.call( owner, this.expando ) &&
+			owner[ this.expando ];
+		return typeof unlock === "number" && unlock > 0 &&
+			unlock < Data.uid && unlock % 1 === 0 ? unlock : 0;
+	},
+	peek: function( owner ) {
+		var unlock = this.getKey( owner );
+		return unlock && Object.prototype.hasOwnProperty.call( this.cache, unlock ) ?
+			this.cache[ unlock ] : undefined;
+	},
 	key: function( owner ) {
 		// We can accept data for non-element nodes in modern browsers,
 		// but we should not, see #8335.
@@ -31,7 +43,7 @@ Data.prototype = {
 
 		var descriptor = {},
 			// Check if the owner object already has a cache key
-			unlock = owner[ this.expando ];
+			unlock = this.getKey( owner );
 
 		// If not, create one
 		if ( !unlock ) {
@@ -45,13 +57,20 @@ Data.prototype = {
 			// Support: Android<4
 			// Fallback to a less secure definition
 			} catch ( e ) {
-				descriptor[ this.expando ] = unlock;
-				jQuery.extend( owner, descriptor );
+				try {
+					descriptor[ this.expando ] = unlock;
+					jQuery.extend( owner, descriptor );
+				} catch ( ignored ) {}
+			}
+			// A frozen/read-only forged expando cannot retain an internal key.
+			// Use the existing non-persistent key-zero path without orphan caches.
+			if ( this.getKey( owner ) !== unlock ) {
+				return 0;
 			}
 		}
 
 		// Ensure the cache object
-		if ( !this.cache[ unlock ] ) {
+		if ( !Object.prototype.hasOwnProperty.call( this.cache, unlock ) ) {
 			this.cache[ unlock ] = {};
 		}
 
@@ -167,12 +186,13 @@ Data.prototype = {
 	},
 	hasData: function( owner ) {
 		return !jQuery.isEmptyObject(
-			this.cache[ owner[ this.expando ] ] || {}
+			this.peek( owner ) || {}
 		);
 	},
 	discard: function( owner ) {
-		if ( owner[ this.expando ] ) {
-			delete this.cache[ owner[ this.expando ] ];
+		var unlock = this.getKey( owner );
+		if ( unlock ) {
+			delete this.cache[ unlock ];
 		}
 	}
 };

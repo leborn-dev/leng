@@ -13,6 +13,6 @@ function scripts() {
   res.end('window.lengScriptExecuted = true;');
  };
 }
-new Server({basePath:path.resolve(__dirname,'..'),frameworks:['jasmine'], files:[jquery,bootstrap,'tests/security-browser.spec.js'],
+new Server({basePath:path.resolve(__dirname,'..'),frameworks:['jasmine'], files:[jquery,bootstrap,'tests/security-browser.spec.js'].concat(variant === '2.1' ? ['tests/jquery-data-identity.spec.js'] : []),
  plugins:['karma-jasmine','karma-chrome-launcher',{'middleware:security-scripts':['factory',scripts]}], middleware:['security-scripts'],
  browsers:['ChromeHeadless'],singleRun:true,reporters:['dots'],port:9887,client:{jasmine:{random:false}}},code=>process.exit(code)).start();

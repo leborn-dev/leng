@@ -8,6 +8,14 @@ function minify(sourceFile,destination,mapFile) {
  if(result.error)throw result.error;
  fs.writeFileSync(path.join(base,destination),result.code+'\n');fs.writeFileSync(path.join(base,mapFile),result.map+'\n');
 }
+// The patched AMD Data class is the canonical source for the 2.1 full bundle.
+const dataSource=fs.readFileSync(path.join(base,'jquery-2.1/src/data/Data.js'),'utf8');
+const jqueryPath=path.join(base,'jquery-2.1/dist/jquery.js');
+const jquerySource=fs.readFileSync(jqueryPath,'utf8');
+const dataStart=jquerySource.indexOf('function Data() {');
+const dataEnd=jquerySource.indexOf('var data_priv = new Data();',dataStart);
+if(dataStart<0||dataEnd<0)throw new Error('Cannot locate jQuery Data build section');
+fs.writeFileSync(jqueryPath,jquerySource.slice(0,dataStart)+dataSource.slice(dataSource.indexOf('function Data() {'),dataSource.indexOf('\nreturn Data;'))+'\n'+jquerySource.slice(dataEnd));
 for(const version of ['2.1','2.2'])minify(`jquery-${version}/dist/jquery.js`,`jquery-${version}/dist/jquery.min.js`,`jquery-${version}/dist/jquery.min.map`);
 minify('validate.js/validate.js','validate.js/validate.min.js','validate.js/validate.min.map');
 minify('sprintf-js/src/sprintf.js','sprintf-js/dist/sprintf.min.js','sprintf-js/dist/sprintf.min.js.map');

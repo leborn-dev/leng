@@ -280,7 +280,7 @@ jQuery.extend({
 
 		for ( ; (elem = elems[ i ]) !== undefined; i++ ) {
 			if ( jQuery.acceptData( elem ) ) {
-				key = elem[ data_priv.expando ];
+				key = data_priv.getKey( elem );
 
 				if ( key && (data = data_priv.cache[ key ]) ) {
 					if ( data.events ) {
@@ -301,7 +301,7 @@ jQuery.extend({
 				}
 			}
 			// Discard any remaining `user` data
-			delete data_user.cache[ elem[ data_user.expando ] ];
+			data_user.discard( elem );
 		}
 	}
 });

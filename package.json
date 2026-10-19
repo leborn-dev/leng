@@ -30,7 +30,8 @@
     "test:firebase-security": "node tests/firebase-security.cjs",
     "test:vendor-browser-syntax": "node tests/vendor-browser-syntax.cjs",
     "build:security-vendor": "node scripts/rebuild-security-vendor.cjs",
-    "test:angular-advisories": "node --test tests/angular-advisory-redos.cjs"
+    "test:angular-advisories": "node --test tests/angular-advisory-redos.cjs",
+    "test:jquery-data-identity": "node --test tests/jquery-data-identity.cjs && node tests/security-browser.cjs 2.1 && node tests/security-browser.cjs 2.1 --min"
   },
   "devDependencies": {
     "angular-benchpress": "file:vendor/security/angular-benchpress",

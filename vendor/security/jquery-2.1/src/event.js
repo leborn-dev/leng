@@ -48,7 +48,7 @@ jQuery.event = {
 			elemData = data_priv.get( elem );
 
 		// Don't attach events to noData or text/comment nodes (but allow plain objects)
-		if ( !elemData ) {
+		if ( !elemData || !data_priv.getKey( elem ) ) {
 			return;
 		}
 
