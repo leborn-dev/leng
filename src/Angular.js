@@ -1000,7 +1000,8 @@ function copy(source, destination, maxDepth) {
         return new source.constructor(source.valueOf());
 
       case '[object RegExp]':
-        var re = new RegExp(source.source, source.toString().match(/[^/]*$/)[0]);
+        var regexpString = source.toString();
+        var re = new RegExp(source.source, regexpString.slice(regexpString.lastIndexOf('/') + 1));
         re.lastIndex = source.lastIndex;
         return re;
 

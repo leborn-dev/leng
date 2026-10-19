@@ -2011,6 +2011,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
     registerContext(SCE_CONTEXTS.MEDIA_URL, [
       'audio|src',
       'img|src',    'img|srcset',
+      'image|href', 'image|xlinkhref',
       'source|src', 'source|srcset',
       'track|src',
       'video|src',  'video|poster'
@@ -2086,46 +2087,43 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         throw $compileMinErr('srcset', 'Can\'t pass trusted values to `{0}`: "{1}"', invokeType, value.toString());
       }
 
-      // Such values are a bit too complex to handle automatically inside $sce.
-      // Instead, we sanitize each of the URIs individually, which works, even dynamically.
-
-      // It's not possible to work around this using `$sce.trustAsMediaUrl`.
-      // If you want to programmatically set explicitly trusted unsafe URLs, you should use
-      // `$sce.trustAsHtml` on the whole `img` tag and inject it into the DOM using the
-      // `ng-bind-html` directive.
-
-      var result = '';
-
-      // first check if there are spaces because it's not the same pattern
-      var trimmedSrcset = trim(value);
-      //                (   999x   ,|   999w   ,|   ,|,   )
-      var srcPattern = /(\s+\d+x\s*,|\s+\d+w\s*,|\s+,|,\s+)/;
-      var pattern = /\s/.test(trimmedSrcset) ? srcPattern : /(,)/;
-
-      // split srcset into tuple of uri and descriptor except for the last item
-      var rawUris = trimmedSrcset.split(pattern);
-
-      // for each tuples
-      var nbrUrisWith2parts = Math.floor(rawUris.length / 2);
-      for (var i = 0; i < nbrUrisWith2parts; i++) {
-        var innerIdx = i * 2;
-        // sanitize the uri
-        result += $sce.getTrustedMediaUrl(trim(rawUris[innerIdx]));
-        // add the descriptor
-        result += ' ' + trim(rawUris[innerIdx + 1]);
+      // Scan URL/descriptor candidates once. Commas inside a URL (notably data
+      // URLs) are preserved; a descriptor can never smuggle another URL past SCE.
+      var input = trim(value), candidates = [], index = 0;
+      var compact = !/\s/.test(input) && input.slice(0, 5).toLowerCase() !== 'data:';
+      while (index < input.length) {
+        while (index < input.length && (input.charAt(index) === ',' || /\s/.test(input.charAt(index)))) index++;
+        if (index === input.length) break;
+        var start = index;
+        while (index < input.length && !/\s/.test(input.charAt(index))) {
+          if (compact && input.charAt(index) === ',') break;
+          index++;
+        }
+        var uri = input.slice(start, index), trailingComma = uri.charAt(uri.length - 1) === ',';
+        if (trailingComma) {
+          var end = uri.length;
+          while (end > 0 && uri.charAt(end - 1) === ',') end--;
+          uri = uri.slice(0, end);
+        }
+        var descriptor = '', descriptorSpace = '';
+        if (!trailingComma && !compact) {
+          start = index;
+          while (index < input.length && input.charAt(index) !== ',') index++;
+          descriptor = trim(input.slice(start, index));
+          if (descriptor && index < input.length && /\s/.test(input.charAt(index - 1))) descriptorSpace = ' ';
+        }
+        if (index < input.length && input.charAt(index) === ',') index++;
+        // Browsers discard invalid descriptors. Do not preserve arbitrary text
+        // that could change URL token boundaries after sanitization.
+        if (descriptor && !/^(?:\d+w|(?:\d+(?:\.\d+)?|\.\d+)(?:[eE][+-]?\d+)?x)$/.test(descriptor)) continue;
+        if (uri) candidates.push({uri: $sce.getTrustedMediaUrl(uri), descriptor: descriptor, space: descriptorSpace});
       }
-
-      // split the last item into uri and descriptor
-      var lastTuple = trim(rawUris[i * 2]).split(/\s/);
-
-      // sanitize the last uri
-      result += $sce.getTrustedMediaUrl(trim(lastTuple[0]));
-
-      // and add the last descriptor if any
-      if (lastTuple.length === 2) {
-        result += (' ' + trim(lastTuple[1]));
+      var result = [];
+      for (var i = 0; i < candidates.length; i++) {
+        var candidate = candidates[i];
+        result.push(candidate.uri + (candidate.descriptor ? ' ' + candidate.descriptor + candidate.space : (i < candidates.length - 1 ? ' ' : '')));
       }
-      return result;
+      return result.join(',');
     }
 
 
@@ -2265,7 +2263,7 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
         nodeName = nodeName_(this.$$element);
 
         // Sanitize img[srcset] values.
-        if (nodeName === 'img' && key === 'srcset') {
+        if ((nodeName === 'img' || nodeName === 'source') && key === 'srcset') {
           this[key] = value = sanitizeSrcset(value, '$set(\'srcset\', value)');
         }
 
@@ -2548,7 +2546,10 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           compile.$$addScopeClass(attrs.$$element);
         }
 
-        childLinkFn = (nodeLinkFn && nodeLinkFn.terminal ||
+        // IE restores user-entered textarea contents into child text nodes.
+        // These are data, not trusted templates; explicit ng-bind/ng-model still link.
+        childLinkFn = (msie && nodeName_(nodeList[i]) === 'textarea' ||
+                      nodeLinkFn && nodeLinkFn.terminal ||
                       !(childNodes = nodeList[i].childNodes) ||
                       !childNodes.length)
             ? null
@@ -3837,6 +3838,8 @@ function $CompileProvider($provide, $$sanitizeUriProvider) {
           (nodeName === 'link' && attrNormalizedName === 'href')
       ) {
         return $sce.RESOURCE_URL;
+      } else if (nodeName === 'image' && (attrNormalizedName === 'href' || attrNormalizedName === 'ngHref')) {
+        return $sce.MEDIA_URL;
       } else if (nodeName === 'a' && (attrNormalizedName === 'href' ||
                                  attrNormalizedName === 'ngHref')) {
         return $sce.URL;

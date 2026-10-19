@@ -68,14 +68,19 @@ function currencyFilter($locale) {
       fractionSize = formats.PATTERNS[1].maxFrac;
     }
 
-    // If the currency symbol is empty, trim whitespace around the symbol
-    var currencySymbolRe = !currencySymbol ? /\s*\u00A4\s*/g : /\u00A4/g;
+    if (amount == null) return amount;
+    var formatted = formatNumber(amount, formats.PATTERNS[1], formats.GROUP_SEP, formats.DECIMAL_SEP, fractionSize);
+    if (currencySymbol) return formatted.replace(/\u00A4/g, currencySymbol);
 
-    // if null or undefined pass it through
-    return (amount == null)
-        ? amount
-        : formatNumber(amount, formats.PATTERNS[1], formats.GROUP_SEP, formats.DECIMAL_SEP, fractionSize).
-            replace(currencySymbolRe, currencySymbol);
+    // Trim only whitespace adjacent to an actual currency marker, in linear time.
+    var parts = formatted.split('\u00A4');
+    for (var i = 0; i < parts.length; i++) {
+      var start = 0, end = parts[i].length;
+      if (i > 0) while (start < end && /\s/.test(parts[i].charAt(start))) start++;
+      if (i < parts.length - 1) while (end > start && /\s/.test(parts[i].charAt(end - 1))) end--;
+      parts[i] = parts[i].slice(start, end);
+    }
+    return parts.join(currencySymbol);
   };
 }
 

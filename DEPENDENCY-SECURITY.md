@@ -46,7 +46,7 @@ verification. No production deployment was performed.
 ## Verification
 
 - Three clean frozen installs and all three live Yarn audits: success, zero findings.
-- Angular Chrome 155 matrix: 26,384 passing tests across jqLite, jQuery 3.7,
+- Angular Chrome 155 matrix: 26,425 passing tests across jqLite, jQuery 3.7,
   patched jQuery 2.2/2.1, modules, ngAnimate and ngMock; docs: 15 passing.
 - Promise/A+ conformance: 872 passing; Node i18n suites: 18 + 9 passing.
 - `grunt ci-checks package`: success, full bundles/docs/link validation/archive.
@@ -66,3 +66,7 @@ suite or test was excluded. Legacy IE/Safari and authenticated cloud/browser
 service runs have not been performed. GitHub CodeQL must reanalyze the final PR;
 local regressions cover the 17 initially reported source findings, but a clean
 hosted analysis is a separate integration check.
+
+## Root package and generated modules
+
+Dependency audits omit the root itself. See [the eleven-advisory source coverage](ROOT-PACKAGE-SECURITY.md), including the IE textarea compatibility note and generated module checks.

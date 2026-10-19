@@ -29,7 +29,8 @@
     "test:vendor-integrity": "node tests/vendor-integrity.cjs",
     "test:firebase-security": "node tests/firebase-security.cjs",
     "test:vendor-browser-syntax": "node tests/vendor-browser-syntax.cjs",
-    "build:security-vendor": "node scripts/rebuild-security-vendor.cjs"
+    "build:security-vendor": "node scripts/rebuild-security-vendor.cjs",
+    "test:angular-advisories": "node --test tests/angular-advisory-redos.cjs"
   },
   "devDependencies": {
     "angular-benchpress": "file:vendor/security/angular-benchpress",

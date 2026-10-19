@@ -1,0 +1,43 @@
+{
+  "debianSourceVersion": "1.8.3-1+deb12u1",
+  "patchIndex": "https://sources.debian.org/patches/angular.js/1.8.3-1+deb12u1/",
+  "files": {
+    "CVE-2023-26118.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2023-26118.patch",
+      "sha256": "8f5157616674bae3a787f3003474f2e6ebedbeb120915bad4399a086b8c72de3"
+    },
+    "CVE-2025-2336.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2025-2336.patch",
+      "sha256": "dd3f87cb54bf1dae80b9bf4a87b6cb7cc9a5ecc6d71d1667afc01182022ae876"
+    },
+    "CVE-2022-25844.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2022-25844.patch",
+      "sha256": "05385917548521f44b0564f19f85b5e46f82e64ceba2051679b423337fe3a11b"
+    },
+    "CVE-2025-0716.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2025-0716.patch",
+      "sha256": "c08d1d1f198ae0e4845b751b7a0b6b5c0e8ab28f74f3c1777e8444495f07325c"
+    },
+    "CVE-2023-26117.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2023-26117.patch",
+      "sha256": "532d84b45649a2be6f721c140226677b221d1fb1878e85244c5d9ed36768bed0"
+    },
+    "CVE-2024-8373.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2024-8373.patch",
+      "sha256": "2657f115e5d3bf4eaf86f63a36f13bc74e856d758b9cb2da4ca8c784968f63be"
+    },
+    "CVE-2023-26116.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2023-26116.patch",
+      "sha256": "0d596765e86a2ce69116dcc801494030f4520bde880aaeaca01b837cc13b8273"
+    },
+    "COPYRIGHT.debian": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/copyright",
+      "sha256": "ec98a91a3b81159cc1866be762130b5a1f5ccfdb6d5b7a385c4c91f5c3faa9d4"
+    },
+    "CVE-2024-21490.patch": {
+      "source": "https://sources.debian.org/data/main/a/angular.js/1.8.3-1%2Bdeb12u1/debian/patches/CVE-2024-21490.patch",
+      "sha256": "2e46b50cde3995857420dd9bebed429a534cca7edcfbbcec5135a26234f2a6f4"
+    }
+  },
+  "use": "Reference patches retain original author/origin metadata and COPYRIGHT.debian. Runtime fixes are adapted to preserve this fork\u2019s ES5/legacy API and URL/srcset behavior, not applied verbatim."
+}
