@@ -1,94 +1,68 @@
-# Dependency security maintenance (2026-10-18)
+# Security maintenance (2026-10-19)
 
-All three Yarn lockfiles (root and both Firebase functions folders) are updated.
-Angular library source and browser APIs are unchanged. Development `.nvmrc` now
-selects Node22; the root package's consumer engine range is retained.
+The root and both Firebase function Yarn trees now have zero known audit
+findings after clean frozen installs. Root audit covers 1,611 dependencies;
+code.angularjs.org functions covers 246; docs.angularjs.org functions covers
+330. This supersedes the residual findings recorded on 2026-10-18. Node
+22.12+ and Yarn 1.22 are required for development; both functions retain their
+Node 22 and `firebase-functions/v1` trigger contracts.
 
-Firebase functions declare Node22, firebase-functions7.4+, firebase-admin14.5+
-and (for code.angularjs.org) Google Cloud Storage7.19+. Both entry points
-explicitly import `firebase-functions/v1`, preserving the existing first-
-generation HTTP/storage trigger definitions. Firebase Admin is a required SDK
-peer. Root Firebase CLI15.34.0 replaces CLI9, whose actual runtime selector
-rejects Node22. Both firebase.json files explicitly declare the functions source
-for the current CLI. Its runtime selector/config parser, version and deploy-help
-commands are tested locally with isolated CLI profile directories. These are dependency/runtime changes, not a production deployment;
-deploying requires selecting Node22 and testing real cloud integrations.
+## Changes and compatibility
 
-The root Jasmine runner is pinned to2.0.0: the next patch2.0.1 uses an obsolete
-git:// reporter URL, and Jasmine3 failed the existing toThrowError matcher test
-while baseline2.0.0 passed. It remains an old development runner with inherited
-findings, not a security-clean replacement.
+Gulp 5, Karma 6, Grunt 1.6/current plugins, Jasmine 5 for Node i18n tests,
+current Google Cloud Storage and ESLint replace obsolete development/runtime
+tools. Browser Jasmine remains compatible with the existing Angular suite.
+Targeted transitive updates preserve the callback mkdirp and request contracts,
+while removing the vulnerable legacy implementations. Full build, CLI, docs,
+benchmark and browser entry points are exercised by regression tests.
 
-## Three narrow dependency compatibility/security choices
+Patchless dependencies use maintained local security forks, with the full
+original functionality retained. [The fork record](vendor/security/README.md)
+and each `UPSTREAM.json` identify original versions, official tarball integrity,
+advisories, actual patches, limits, licenses and update procedures. Audit cannot
+assess custom source code; the tests and source review are required alongside
+all three audits. No audit suppression or alert dismissal is used.
 
-1. `dgeni-packages/mkdirp-promise/mkdirp:0.5.6`: the promise adapter calls the old
-   callback API but declares mkdirp `*`, otherwise selecting major3's object
-   export and failing `mkdirp is not a function`. The original lock used
-   mkdirp0.5.1/minimist0.0.8; the scoped version uses callback-compatible
-   mkdirp0.5.6 and minimist1.2.8. The create-existing-directory regression fails
-   before this resolution and passes afterward.
-2. Marked is4.3.0 at the root and via `dgeni-packages/marked`. Its actual CJS
-   export supports lexer/parser/Renderer; this removes the old Marked XSS/ReDoS
-   advisories, including the0.3.19 email ReDoS that an ordinary minor refresh
-   would introduce. Marked4 has a changed heading API and nested lexer tokens.
-   A local renderMarkdown service preserves published heading IDs from source
-   tokens, including code delimiters, and retains upstream code indentation.
-   IDs contain only word characters/hyphens. Regression tests cover `$event`,
-   ngAttr, quoted headings and attribute-injection resistance. Browser debug,
-   jQuery and test deployments use the current UMD asset path.
-3. `protractor/webdriver-manager/adm-zip:0.6.1`: old versions retain ZIP
-   traversal/DoS findings. This targeted dependency passes the real manager's
-   normal archive extraction API and a destination-symlink regression that
-   fails on0.5.18. It does not update the entire Protractor browser stack.
+Angular source now prevents prototype pollution through `__proto__` and
+inherited deep-merge targets while preserving legitimate constructor/prototype
+data. jqLite's optional XHTML expansion uses a token scanner that preserves
+quoted attributes, comments, raw text and foreign content. Literal route/error
+patterns are escaped fully; version tooling runs argument arrays without a
+shell. Legacy jQuery 2.1/2.2 fixtures remain separate patched old APIs and load
+local assets. Supporting tests no longer use unsafe partial sanitization.
 
-These resolutions do not suppress audit findings. The updated renderer avoids
-downgrading Marked or disabling the documentation's anchor validation. A
-complete package build passes all documentation link checks.
+Firebase HTTP handlers confine snapshot reads to `content/partials`, reject
+malformed paths, HTML-escape storage listings, encode object-name links and
+construct query-free same-origin bases. Real local HTTP requests exercise these
+boundaries, with only the cloud Storage SDK stubbed.
 
-## Validation
+The Sauce Connect adapter downloads official SC 5.5.3 archives over HTTPS,
+checks pinned official SHA256 before extraction, and translates the previous
+PID/readiness/tunnel interface. Credentials are passed by environment. Its
+process lifecycle is tested, and the official Mac binary's version and supported
+flags were verified. Starting an authenticated remote tunnel is outside local
+verification. No production deployment was performed.
 
-- Node22 clean frozen function installs and actual v1 export loading passed.
-- Existing i18n tests:18+9 tests, zero failures.
-- Actual Firebase HTTP export: localhost snapshot/cache-header/404 passed.
-  Storage trigger type/export metadata is preserved; real cloud storage,
-  deletion, authentication and deployment were not exercised.
-- Docs callback adapter, Markdown anchors/escaping and webdriver ZIP roundtrip/
-  destination-symlink protection passed.
-- Full `CI=1 yarn grunt package` passed in an isolated Node22 container with
-  Java: Angular bundle generation/minification, documentation link validation,
-  and compression of3296 files. Remote version metadata lookup was used.
-- Real Chromium loaded generated build/angular.js and verified two-way input
-  binding and click counter0->1. All Angular browser/unit/e2e matrices are not
-  claimed. Native/dependency install scripts were disabled during the recorded
-  frozen installs; explicit build/test steps were run separately.
+## Verification
 
-## Audit scope and residuals
+- Three clean frozen installs and all three live Yarn audits: success, zero findings.
+- Angular Chrome 155 matrix: 26,384 passing tests across jqLite, jQuery 3.7,
+  patched jQuery 2.2/2.1, modules, ngAnimate and ngMock; docs: 15 passing.
+- Promise/A+ conformance: 872 passing; Node i18n suites: 18 + 9 passing.
+- `grunt ci-checks package`: success, full bundles/docs/link validation/archive.
+- Security regressions cover braces public/direct AST APIs and resource bounds,
+  validate.js ReDoS, sprintf precision/width, Angular source and Firebase HTTP.
+- Full and minified jQuery 2.1/2.2/3 + Bootstrap: six security/compatibility
+  cases per variant in actual Chrome. All shipped fork browser scripts and both
+  benchmark bundles parse as ES5; normal and automatic benchmark pages initialize
+  in actual Chrome. Installed fork entry points match reviewed vendor files.
+- Existing markdown, filesystem, ZIP/symlink and Firebase CLI/export tests pass.
 
-Yarn audit counts advisories per resolution path, unlike GitHub alert counts.
-The root tree drops1065->200 paths (remaining critical19/high110/moderate63/
-low8). These root dependencies are development build/test/deployment tools;
-the AngularJS framework source itself is outside dependency-graph coverage.
-The unchanged old browser runtime is not certified safe by this audit.
-
-code.angularjs.org functions drop140->3 paths (all moderate, UUID through Google
-Cloud Storage/gaxios); docs.angularjs.org functions drop180->2 (all moderate,
-sprintf-js through development ESLint). Both have zero high/critical findings.
-Neither function tree introduces a new advisory ID.
-
-The root retains Grunt/Gulp/Karma/Protractor/Firebase CLI/benchmark stacks and
-patchless node-forge/xmldom/request/ip/elliptic/other utilities. Large tooling or
-framework migrations are not included. No force, audit suppression or alert
-dismissal is used.
-
-One new root advisory ID remains versus the original lock:
-GHSA-q58r-hwc8-rm9j on angular-benchpress's Bootstrap3.4.1 (popover/tooltip XSS,
-no patched Bootstrap3 version). That CLI copies only dist/css/bootstrap.min.css;
-its generated template loads the CSS, not Bootstrap JavaScript. This reachability
-boundary is recorded, not treated as removal of the vulnerable npm package.
-The root's separate pre-existing Bootstrap3.1.1 findings also remain. Removing or
-replacing the legacy benchmark/tooling stack needs a separate compatibility
-migration; no Bootstrap5 rewrite is included.
-
-Sources:
-- https://github.com/advisories/GHSA-5v2h-r2cx-5xgj
-- https://github.com/cthackers/adm-zip/releases/tag/v0.6.1
+Chrome 155 natively normalizes datetime-local fractional seconds; four string
+expectations now compare to a native input's normalized representation while
+retaining the date/millisecond assertions. The same failures were reproduced
+against the original source before changing those expectations. No browser
+suite or test was excluded. Legacy IE/Safari and authenticated cloud/browser
+service runs have not been performed. GitHub CodeQL must reanalyze the final PR;
+local regressions cover the 17 initially reported source findings, but a clean
+hosted analysis is a separate integration check.

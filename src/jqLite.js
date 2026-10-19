@@ -234,7 +234,11 @@ function jqLiteExpandXHTML(html) {
   var lower = html.toLowerCase();
   while (index < html.length) {
     if (rawText) {
+      if (rawText === 'plaintext') return output + html.slice(index);
       var close = lower.indexOf('</' + rawText, index);
+      while (close >= 0 && !/[\s/>]/.test(html.charAt(close + rawText.length + 2))) {
+        close = lower.indexOf('</' + rawText, close + 2);
+      }
       if (close < 0) return output + html.slice(index);
       output += html.slice(index, close);
       index = close;
@@ -267,7 +271,7 @@ function jqLiteExpandXHTML(html) {
     if (match) {
       var tag = match[1].toLowerCase();
       if (/^(?:script|style|textarea|title|xmp|iframe|noembed|noframes|plaintext|svg|math)$/.test(tag)) {
-        rawText = tag;
+        if (!/^(?:svg|math)$/.test(tag) || token.slice(-2) !== '/>') rawText = tag;
       } else if (token.slice(-2) === '/>' &&
           !/^(?:area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)$/.test(tag)) {
         token = token.slice(0, -2) + '></' + match[1] + '>';

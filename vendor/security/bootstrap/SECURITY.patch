@@ -1,0 +1,95 @@
+--- a/js/button.js
++++ b/js/button.js
+@@ -25,6 +25,15 @@
+     loadingText: 'loading...'
+   }
+ 
++  Button.prototype.sanitize = function (unsafeText) {
++    return String(unsafeText)
++      .replace(/&/g, '&amp;')
++      .replace(/</g, '&lt;')
++      .replace(/>/g, '&gt;')
++      .replace(/"/g, '&quot;')
++      .replace(/'/g, '&#039;');
++  }
++
+   Button.prototype.setState = function (state) {
+     var d    = 'disabled'
+     var $el  = this.$element
+@@ -33,11 +42,14 @@
+ 
+     state += 'Text'
+ 
+-    if (data.resetText == null) $el.data('resetText', $el[val]())
++    if (data.resetText == null) {
++      this.originalText = $el[val]()
++      $el.data('resetText', this.originalText)
++    }
+ 
+     // push to event loop to allow forms to submit
+     setTimeout($.proxy(function () {
+-      $el[val](data[state] == null ? this.options[state] : data[state])
++      $el[val](data[state] == null ? this.options[state] : (state === 'resetText' && data[state] === this.originalText ? data[state] : this.sanitize(data[state])))
+ 
+       if (state == 'loadingText') {
+         this.isLoading = true
+--- a/js/carousel.js
++++ b/js/carousel.js
+@@ -217,7 +217,7 @@
+     var target  = $this.attr('data-target') || href
+     var $target = $(document).find(target)
+ 
+-    if (!$target.hasClass('carousel')) return
++    if (!$target.hasClass('carousel')) return false;
+ 
+     var options = $.extend({}, $target.data(), $this.data())
+     var slideIndex = $this.attr('data-slide-to')
+--- a/js/tooltip.js
++++ b/js/tooltip.js
+@@ -99,6 +99,7 @@
+   }
+ 
+   function sanitizeHtml(unsafeHtml, whiteList, sanitizeFn) {
++    var doc = null
+     if (unsafeHtml.length === 0) {
+       return unsafeHtml
+     }
+@@ -107,16 +108,21 @@
+       return sanitizeFn(unsafeHtml)
+     }
+ 
+-    // IE 8 and below don't support createHTMLDocument
+-    if (!document.implementation || !document.implementation.createHTMLDocument) {
+-      return unsafeHtml
+-    }
+-
+-    var createdDocument = document.implementation.createHTMLDocument('sanitization')
+-    createdDocument.body.innerHTML = unsafeHtml
++    try {
++        doc = new DOMParser().parseFromString(unsafeHtml, 'text/html');
++    } catch (_) {}
++    if (!doc || !doc.documentElement) {
++      // IE 8 and below don't support createHTMLDocument
++      if (!document.implementation || !(document.implementation instanceof DOMImplementation) || document.implementation.createHTMLDocument === undefined) {
++        throw new Error('Could not sanitize CVE-2025-1647');
++      }
++      doc = document.implementation.createHTMLDocument('sanitization')
++      doc.body.innerHTML = unsafeHtml
++    }
++    var body = doc.body || doc.documentElement;
+ 
+     var whitelistKeys = $.map(whiteList, function (el, i) { return i })
+-    var elements = $(createdDocument.body).find('*')
++    var elements = $(body).find('*')
+ 
+     for (var i = 0, len = elements.length; i < len; i++) {
+       var el = elements[i]
+@@ -138,7 +144,7 @@
+       }
+     }
+ 
+-    return createdDocument.body.innerHTML
++    return body.innerHTML
+   }
+ 
+   // TOOLTIP PUBLIC CLASS DEFINITION

@@ -1,15 +1,28 @@
 'use strict';
 
+/* global Promise */
+
 var gulp = require('gulp');
 var concat = require('gulp-concat');
 var eslint = require('gulp-eslint');
 var Dgeni = require('dgeni');
-var merge = require('event-stream').merge;
+function merge() {
+  return Promise.all(Array.prototype.slice.call(arguments).map(function(stream) {
+    return new Promise(function(resolve, reject) {
+      stream.once('end', resolve);
+      stream.once('error', reject);
+      stream.resume();
+    });
+  }));
+}
 var path = require('canonical-path');
-var foreach = require('gulp-foreach');
 var uglify = require('gulp-uglify');
 var sourcemaps = require('gulp-sourcemaps');
 var rename = require('gulp-rename');
+var minifierOptions = {
+  ie: true,
+  compress: {arrows: false, objects: false, templates: false, optional_chains: false}
+};
 
 // We indicate to gulp that tasks are async by returning the stream.
 // Gulp can then wait for the stream to close before starting dependent tasks.
@@ -25,7 +38,7 @@ var assets = 'app/assets/**/*';
 var getMergedEslintConfig = function(filepath) {
   return {
     configFile: filepath,
-    baseConfig: '../.eslintrc.json',
+    baseConfig: {extends: path.resolve('../.eslintrc.json')},
     rules: {
       // Examples don't run in strict mode; accept that for now.
       strict: 'off',
@@ -59,7 +72,7 @@ var copyComponent = function(component, pattern, base, sourceFolder, packageFile
   packageFile = packageFile || 'package.json';
   var version = require(path.resolve(sourceFolder, component, packageFile)).version;
   return gulp
-    .src(sourceFolder + '/' + component + pattern, {base: sourceFolder + '/' + component + '/' + base})
+    .src(sourceFolder + '/' + component + pattern, {base: sourceFolder + '/' + component + '/' + base, encoding: false})
     .pipe(gulp.dest(outputFolder + '/components/' + component + '-' + version));
 };
 
@@ -74,36 +87,29 @@ gulp.task('build-app', function() {
     .pipe(concat(file))
     .pipe(gulp.dest(folder))
     .pipe(rename(minFile))
-    .pipe(uglify())
+    .pipe(uglify(minifierOptions))
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest(folder));
 });
 
 
 gulp.task('assets', function() {
-  var JS_EXT = /\.js$/;
   return merge(
-    gulp.src(['img/**/*']).pipe(gulp.dest(outputFolder + '/img')),
-    gulp.src([assets]).pipe(gulp.dest(outputFolder)),
-    gulp.src([assets])
-      .pipe(foreach(function(stream, file) {
-        if (JS_EXT.test(file.relative)) {
-          var minFile = file.relative.replace(JS_EXT, '.min.js');
-          return stream
-            .pipe(sourcemaps.init())
-            .pipe(concat(minFile))
-            .pipe(uglify())
-            .pipe(sourcemaps.write('.'))
-            .pipe(gulp.dest(outputFolder));
-        }
-      })),
+    gulp.src(['img/**/*'], {encoding: false}).pipe(gulp.dest(outputFolder + '/img')),
+    gulp.src([assets], {encoding: false}).pipe(gulp.dest(outputFolder)),
+    gulp.src(['app/assets/**/*.js'])
+      .pipe(sourcemaps.init())
+      .pipe(rename({suffix: '.min'}))
+      .pipe(uglify(minifierOptions))
+      .pipe(sourcemaps.write('.'))
+      .pipe(gulp.dest(outputFolder)),
     copyComponent('bootstrap', '/dist/css/bootstrap?(.min).css', 'dist'),
     copyComponent('bootstrap', '/dist/fonts/*', 'dist'),
     copyComponent('open-sans-fontface', '/fonts/{Regular,Semibold,Bold}/*'),
     copyComponent('lunr', '/lunr?(.min).js'),
     copyComponent('google-code-prettify', '/**/{lang-css,prettify}.js'),
     copyComponent('jquery', '/dist/jquery.js', 'dist'),
-    copyComponent('marked', '/lib/marked.js'),
+    copyComponent('marked', '/lib/marked.umd.js'),
     copyComponent('marked', '/marked.min.js')
   );
 });
@@ -118,7 +124,7 @@ gulp.task('doc-gen', function() {
 
 
 // Lint the example and protractor test files
-gulp.task('eslint', ['doc-gen'], function() {
+gulp.task('eslint', gulp.series('doc-gen', function() {
   var examplesConfig = getMergedEslintConfig('../docs/app/test/.eslintrc.json');
   // While in source we don't want to assume the browser environment so that we're
   // compatible with non-browser window implementations like jsdom, it's not necessary
@@ -156,12 +162,12 @@ gulp.task('eslint', ['doc-gen'], function() {
       .pipe(eslint.format())
       .pipe(eslint.failAfterError())
   );
-});
+}));
 
 
 // The default task that will be run if no task is supplied
-gulp.task('default', ['assets', 'doc-gen', 'build-app', 'eslint']);
+gulp.task('default', gulp.parallel('assets', 'build-app', 'eslint'));
 
 gulp.task('watch', function() {
-  gulp.watch([src, ignoredFiles, assets], ['assets', 'build-app']);
+  gulp.watch([src, ignoredFiles, assets], gulp.parallel('assets', 'build-app'));
 });

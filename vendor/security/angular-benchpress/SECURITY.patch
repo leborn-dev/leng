@@ -1,0 +1,36 @@
+--- a/lib/cli.js
++++ b/lib/cli.js
+@@ -6,14 +6,13 @@
+     mkdirp = require('mkdirp'),
+     defaultBuildPath = path.resolve('benchpress-build'),
+     defaultBenchmarksPath = path.resolve('benchmarks'),
+-    underscoreMapPath = path.resolve(benchpressBase, 'node_modules/underscore/underscore-min.map'),
+-    underscorePath = path.resolve(benchpressBase, 'node_modules/underscore/underscore-min.js'),
+-    bootstrapPath = path.resolve(benchpressBase, 'node_modules/bootstrap/dist/css/bootstrap.min.css'),
++    underscorePath = require.resolve('underscore/underscore-min.js'),
++    bootstrapPath = require.resolve('bootstrap/dist/css/bootstrap.min.css'),
+     bpPath = path.resolve(benchpressBase, 'lib/bp.js'),
+     libPath = path.resolve(benchpressBase, 'lib'),
+     minimist = require('minimist'),
+     server = require('./node/server'),
+-    browserify = require('browserify');
++    browserify = require('./node/bundle');
+ 
+ 
+ exports.launchChrome = function launchChrome(done) {
+--- /dev/null
++++ b/lib/node/bundle.js
+@@ -0,0 +1,13 @@
++
++'use strict';
++// Preserve Benchpress's stream contract while using a maintained browser bundler.
++const esbuild = require('esbuild');
++const {PassThrough} = require('node:stream');
++module.exports = function bundle(entry) {
++  return {bundle() {
++    const output = new PassThrough();
++    esbuild.build({entryPoints:[entry], bundle:true, write:false, platform:'browser', format:'iife', target:'es5', define:{global:'window'}})
++      .then(result => output.end(result.outputFiles[0].contents), error => output.destroy(error));
++    return output;
++  }};
++};

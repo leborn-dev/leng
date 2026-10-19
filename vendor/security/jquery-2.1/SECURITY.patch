@@ -1,0 +1,128 @@
+--- a/dist/jquery.js
++++ b/dist/jquery.js
+@@ -210,7 +210,7 @@
+ 				copy = options[ name ];
+ 
+ 				// Prevent never-ending loop
+-				if ( target === copy ) {
++				if ( name === "__proto__" || target === copy ) {
+ 					continue;
+ 				}
+ 
+@@ -4925,7 +4925,7 @@
+ 	wrapMap = {
+ 
+ 		// Support: IE9
+-		option: [ 1, "<select multiple='multiple'>", "</select>" ],
++		option: [ 0, "", "" ],
+ 
+ 		thead: [ 1, "<table>", "</table>" ],
+ 		col: [ 2, "<table><colgroup>", "</colgroup></table>" ],
+@@ -5111,7 +5111,7 @@
+ 					// Deserialize a standard representation
+ 					tag = ( rtagName.exec( elem ) || [ "", "" ] )[ 1 ].toLowerCase();
+ 					wrap = wrapMap[ tag ] || wrapMap._default;
+-					tmp.innerHTML = wrap[ 1 ] + elem.replace( rxhtmlTag, "<$1></$2>" ) + wrap[ 2 ];
++					tmp.innerHTML = wrap[ 1 ] + elem + wrap[ 2 ];
+ 
+ 					// Descend through wrappers to the right content
+ 					j = wrap[ 0 ];
+@@ -5310,7 +5310,7 @@
+ 			if ( typeof value === "string" && !rnoInnerhtml.test( value ) &&
+ 				!wrapMap[ ( rtagName.exec( value ) || [ "", "" ] )[ 1 ].toLowerCase() ] ) {
+ 
+-				value = value.replace( rxhtmlTag, "<$1></$2>" );
++				value = value;
+ 
+ 				try {
+ 					for ( ; i < l; i++ ) {
+@@ -8212,7 +8212,10 @@
+ 			}
+ 
+ 			// Convert no matter what (that way responseXXX fields are always set)
+-			response = ajaxConvert( s, response, jqXHR, isSuccess );
++			if ( !isSuccess && jQuery.inArray( "script", s.dataTypes ) > -1 ) {
++                s.converters[ "text script" ] = function() {};
++            }
++            response = ajaxConvert( s, response, jqXHR, isSuccess );
+ 
+ 			// If successful, handle type chaining
+ 			if ( isSuccess ) {
+@@ -8665,6 +8668,10 @@
+ });
+ 
+ // Handle cache's special case and crossDomain
++jQuery.ajaxPrefilter( function( s ) {
++    if ( s.crossDomain ) { s.contents.script = false; }
++} );
++
+ jQuery.ajaxPrefilter( "script", function( s ) {
+ 	if ( s.cache === undefined ) {
+ 		s.cache = false;
+--- a/src/ajax/script.js
++++ b/src/ajax/script.js
+@@ -20,6 +20,10 @@
+ });
+ 
+ // Handle cache's special case and crossDomain
++jQuery.ajaxPrefilter( function( s ) {
++    if ( s.crossDomain ) { s.contents.script = false; }
++} );
++
+ jQuery.ajaxPrefilter( "script", function( s ) {
+ 	if ( s.cache === undefined ) {
+ 		s.cache = false;
+--- a/src/ajax.js
++++ b/src/ajax.js
+@@ -676,7 +676,10 @@
+ 			}
+ 
+ 			// Convert no matter what (that way responseXXX fields are always set)
+-			response = ajaxConvert( s, response, jqXHR, isSuccess );
++			if ( !isSuccess && jQuery.inArray( "script", s.dataTypes ) > -1 ) {
++                s.converters[ "text script" ] = function() {};
++            }
++            response = ajaxConvert( s, response, jqXHR, isSuccess );
+ 
+ 			// If successful, handle type chaining
+ 			if ( isSuccess ) {
+--- a/src/core.js
++++ b/src/core.js
+@@ -157,7 +157,7 @@
+ 				copy = options[ name ];
+ 
+ 				// Prevent never-ending loop
+-				if ( target === copy ) {
++				if ( name === "__proto__" || target === copy ) {
+ 					continue;
+ 				}
+ 
+--- a/src/manipulation.js
++++ b/src/manipulation.js
+@@ -30,7 +30,7 @@
+ 	wrapMap = {
+ 
+ 		// Support: IE9
+-		option: [ 1, "<select multiple='multiple'>", "</select>" ],
++		option: [ 0, "", "" ],
+ 
+ 		thead: [ 1, "<table>", "</table>" ],
+ 		col: [ 2, "<table><colgroup>", "</colgroup></table>" ],
+@@ -216,7 +216,7 @@
+ 					// Deserialize a standard representation
+ 					tag = ( rtagName.exec( elem ) || [ "", "" ] )[ 1 ].toLowerCase();
+ 					wrap = wrapMap[ tag ] || wrapMap._default;
+-					tmp.innerHTML = wrap[ 1 ] + elem.replace( rxhtmlTag, "<$1></$2>" ) + wrap[ 2 ];
++					tmp.innerHTML = wrap[ 1 ] + elem + wrap[ 2 ];
+ 
+ 					// Descend through wrappers to the right content
+ 					j = wrap[ 0 ];
+@@ -415,7 +415,7 @@
+ 			if ( typeof value === "string" && !rnoInnerhtml.test( value ) &&
+ 				!wrapMap[ ( rtagName.exec( value ) || [ "", "" ] )[ 1 ].toLowerCase() ] ) {
+ 
+-				value = value.replace( rxhtmlTag, "<$1></$2>" );
++				value = value;
+ 
+ 				try {
+ 					for ( ; i < l; i++ ) {

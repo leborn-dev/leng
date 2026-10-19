@@ -32,7 +32,7 @@ if (!semver.satisfies(currentYarnVersion, expectedYarnVersion)) {
 }
 
 // Grunt CLI version checks
-var expectedGruntVersion = pkg.engines['grunt-cli'];
+var expectedGruntVersion = pkg.devDependencies['grunt-cli'];
 var currentGruntVersions = exec('grunt --version', {silent: true}).stdout;
 var match = /^grunt-cli v(.+)$/m.exec(currentGruntVersions);
 if (!match) {

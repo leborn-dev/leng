@@ -169,42 +169,4 @@ module.exports = function(config, specificOptions) {
   });
 
 
-  // Terrible hack to workaround inflexibility of log4js:
-  // - ignore web-server's 404 warnings,
-  // - ignore DEBUG logs (on CI), we log them into a file instead.
-  var IGNORED_404 = [
-    '/favicon.ico',
-    '/%7B%7BtestUrl%7D%7D',
-    '/someSanitizedUrl',
-    '/{{testUrl}}'
-  ];
-  var log4js = require('log4js');
-  var layouts = require('log4js/lib/layouts');
-  var originalConfigure = log4js.configure;
-  log4js.configure = function(log4jsConfig) {
-    var consoleAppender = log4jsConfig.appenders.shift();
-    var originalResult = originalConfigure.call(log4js, log4jsConfig);
-    var layout = layouts.layout(consoleAppender.layout.type, consoleAppender.layout);
-
-
-
-    log4js.addAppender(function(log) {
-      var msg = log.data[0];
-
-      // ignore web-server's 404s
-      if (log.categoryName === 'web-server' && log.level.levelStr === config.LOG_WARN &&
-          IGNORED_404.some(function(ignoredLog) {return msg.indexOf(ignoredLog) !== -1;})) {
-        return;
-      }
-
-      // on CI, ignore DEBUG statements
-      if (process.env.CI && log.level.levelStr === config.LOG_DEBUG) {
-        return;
-      }
-
-      console.log(layout(log));
-    });
-
-    return originalResult;
-  };
 };

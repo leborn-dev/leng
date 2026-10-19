@@ -9,12 +9,25 @@ const gcsBucketId = `${process.env.GCLOUD_PROJECT}.appspot.com`;
 const BROWSER_CACHE_DURATION = 60 * 10;
 const CDN_CACHE_DURATION = 60 * 60 * 12;
 
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, character => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', '\'': '&#39;'
+  })[character]);
+}
+
 function sendStoredFile(request, response) {
   // Request paths will be URI-encoded, so we need to decode them to match the file names in the
   // storage bucket. Failing to do so will result in a 404 error from the bucket and `index.html`
   // will be returned instead.
   // Example of path requiring decoding: `.../input%5Btext%5D.html` --> `.../input[text].html`
-  const requestPath = decodeURI(request.path || '/');
+  let requestPath;
+  try { requestPath = decodeURI(request.path || '/'); } catch (error) {
+    return response.status(400).send('Invalid request path');
+  }
+  if (requestPath.includes('\\') || requestPath.includes('\0') ||
+      requestPath.split('/').some(segment => segment === '.' || segment === '..')) {
+    return response.status(400).send('Invalid request path');
+  }
   let filePathSegments = requestPath.split('/').filter((segment) => {
     // Remove empty leading or trailing path parts
     return segment !== '';
@@ -123,17 +136,18 @@ function sendStoredFile(request, response) {
 
       directoryList.forEach(directoryPath => {
         const dirName = directoryPath.split('/').reverse()[1];
-        contentList += `<a href="${dirName}/">${dirName}/</a><br>`;
+        contentList += `<a href="${encodeURIComponent(dirName)}/">${escapeHtml(dirName)}/</a><br>`;
       });
 
       fileList.forEach(file => {
         const fileName = file.metadata.name.split('/').pop();
-        contentList += `<a href="${fileName}">${fileName}</a><br>`;
+        contentList += `<a href="${encodeURIComponent(fileName)}">${escapeHtml(fileName)}</a><br>`;
       });
 
       // A trailing slash in the base creates correct relative links when the url is accessed
       // without trailing slash
-      const base = request.originalUrl.endsWith('/') ? request.originalUrl : request.originalUrl + '/';
+      const requestBase = '/' + requestPath.split('/').filter(Boolean).map(encodeURIComponent).join('/');
+      const base = requestBase.endsWith('/') ? requestBase : requestBase + '/';
 
       const directoryListing = `
         <!DOCTYPE html>
@@ -141,10 +155,10 @@ function sendStoredFile(request, response) {
           <head>
             <meta charset="utf-8" />
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <base href="${base}">
+            <base href="${escapeHtml(base)}">
           </head>
           <body>
-            <h1>Index of ${path}</h1>
+            <h1>Index of ${escapeHtml(path)}</h1>
             <hr>
             <pre>${contentList}</pre>
           </body>

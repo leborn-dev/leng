@@ -1,0 +1,112 @@
+--- a/dist/jquery.js
++++ b/dist/jquery.js
+@@ -210,7 +210,7 @@
+ 				copy = options[ name ];
+ 
+ 				// Prevent never-ending loop
+-				if ( target === copy ) {
++				if ( name === "__proto__" || target === copy ) {
+ 					continue;
+ 				}
+ 
+@@ -4253,7 +4253,7 @@
+ var wrapMap = {
+ 
+ 	// Support: IE9
+-	option: [ 1, "<select multiple='multiple'>", "</select>" ],
++	option: [ 0, "", "" ],
+ 
+ 	// XHTML parsers do not magically insert elements in the
+ 	// same way that tag soup parsers do. So we cannot shorten
+@@ -5322,7 +5322,7 @@
+ 
+ jQuery.extend( {
+ 	htmlPrefilter: function( html ) {
+-		return html.replace( rxhtmlTag, "<$1></$2>" );
++		return html;
+ 	},
+ 
+ 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {
+@@ -8704,7 +8704,10 @@
+ 			}
+ 
+ 			// Convert no matter what (that way responseXXX fields are always set)
+-			response = ajaxConvert( s, response, jqXHR, isSuccess );
++			if ( !isSuccess && jQuery.inArray( "script", s.dataTypes ) > -1 ) {
++                s.converters[ "text script" ] = function() {};
++            }
++            response = ajaxConvert( s, response, jqXHR, isSuccess );
+ 
+ 			// If successful, handle type chaining
+ 			if ( isSuccess ) {
+@@ -9212,6 +9215,10 @@
+ } );
+ 
+ // Handle cache's special case and crossDomain
++jQuery.ajaxPrefilter( function( s ) {
++    if ( s.crossDomain ) { s.contents.script = false; }
++} );
++
+ jQuery.ajaxPrefilter( "script", function( s ) {
+ 	if ( s.cache === undefined ) {
+ 		s.cache = false;
+--- a/src/ajax/script.js
++++ b/src/ajax/script.js
+@@ -22,6 +22,10 @@
+ } );
+ 
+ // Handle cache's special case and crossDomain
++jQuery.ajaxPrefilter( function( s ) {
++    if ( s.crossDomain ) { s.contents.script = false; }
++} );
++
+ jQuery.ajaxPrefilter( "script", function( s ) {
+ 	if ( s.cache === undefined ) {
+ 		s.cache = false;
+--- a/src/ajax.js
++++ b/src/ajax.js
+@@ -731,7 +731,10 @@
+ 			}
+ 
+ 			// Convert no matter what (that way responseXXX fields are always set)
+-			response = ajaxConvert( s, response, jqXHR, isSuccess );
++			if ( !isSuccess && jQuery.inArray( "script", s.dataTypes ) > -1 ) {
++                s.converters[ "text script" ] = function() {};
++            }
++            response = ajaxConvert( s, response, jqXHR, isSuccess );
+ 
+ 			// If successful, handle type chaining
+ 			if ( isSuccess ) {
+--- a/src/core.js
++++ b/src/core.js
+@@ -157,7 +157,7 @@
+ 				copy = options[ name ];
+ 
+ 				// Prevent never-ending loop
+-				if ( target === copy ) {
++				if ( name === "__proto__" || target === copy ) {
+ 					continue;
+ 				}
+ 
+--- a/src/manipulation/wrapMap.js
++++ b/src/manipulation/wrapMap.js
+@@ -4,7 +4,7 @@
+ var wrapMap = {
+ 
+ 	// Support: IE9
+-	option: [ 1, "<select multiple='multiple'>", "</select>" ],
++	option: [ 0, "", "" ],
+ 
+ 	// XHTML parsers do not magically insert elements in the
+ 	// same way that tag soup parsers do. So we cannot shorten
+--- a/src/manipulation.js
++++ b/src/manipulation.js
+@@ -226,7 +226,7 @@
+ 
+ jQuery.extend( {
+ 	htmlPrefilter: function( html ) {
+-		return html.replace( rxhtmlTag, "<$1></$2>" );
++		return html;
+ 	},
+ 
+ 	clone: function( elem, dataAndEvents, deepDataAndEvents ) {

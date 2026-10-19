@@ -2,6 +2,7 @@
 
 const functions = require('firebase-functions/v1');
 const fs = require('fs');
+const path = require('path');
 
 const BROWSER_CACHE_DURATION = 60 * 60;
 const CDN_CACHE_DURATION = 60 * 60 * 12;
@@ -25,7 +26,18 @@ const buildSnapshot = data => `<!DOCTYPE html>
 function sendFile(request, response) {
 
   const snapshotRequested = typeof request.query._escaped_fragment_ !== 'undefined';
-  const filePath = `content/${snapshotRequested ? `partials${request.path}` : 'index'}.html`;
+  let filePath = 'content/index.html';
+  if (snapshotRequested) {
+    const partialsRoot = path.resolve(__dirname, 'content/partials');
+    let requestPath;
+    try { requestPath = decodeURIComponent(request.path); } catch (error) {
+      return response.status(404).end();
+    }
+    filePath = path.resolve(partialsRoot, `.${requestPath}.html`);
+    if (requestPath.includes('\\') || requestPath.includes('\0') || !filePath.startsWith(partialsRoot + path.sep)) {
+      return response.status(404).end();
+    }
+  }
 
   if (snapshotRequested) {
     fs.readFile(filePath, {encoding: 'utf8'}, (error, data) => {

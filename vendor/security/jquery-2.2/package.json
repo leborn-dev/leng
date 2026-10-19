@@ -1,0 +1,58 @@
+{
+  "name": "@leng/jquery-2-2",
+  "title": "jQuery",
+  "description": "JavaScript library for DOM operations",
+  "version": "2.2.4-leng.1",
+  "main": "dist/jquery.js",
+  "homepage": "http://jquery.com",
+  "author": {
+    "name": "jQuery Foundation and other contributors",
+    "url": "https://github.com/jquery/jquery/blob/2.2.4/AUTHORS.txt"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jquery/jquery.git"
+  },
+  "keywords": [
+    "jquery",
+    "javascript",
+    "browser",
+    "library"
+  ],
+  "bugs": {
+    "url": "https://github.com/jquery/jquery/issues"
+  },
+  "license": "MIT",
+  "dependencies": {},
+  "commitplease": {
+    "components": [
+      "Docs",
+      "Tests",
+      "Build",
+      "Release",
+      "Core",
+      "Ajax",
+      "Attributes",
+      "Callbacks",
+      "CSS",
+      "Data",
+      "Deferred",
+      "Deprecated",
+      "Dimensions",
+      "Effects",
+      "Event",
+      "Manipulation",
+      "Offset",
+      "Queue",
+      "Selector",
+      "Serialize",
+      "Traversing",
+      "Wrap"
+    ]
+  },
+  "upstream": {
+    "name": "jquery",
+    "version": "2.2.4"
+  },
+  "private": true
+}

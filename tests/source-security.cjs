@@ -36,3 +36,9 @@ test('legacy XHTML conversion keeps attributes and raw-text content intact',()=>
  }
  assert.equal(c.expand('<!-- <div/> --> <br/><div/>'),'<!-- <div/> --> <br/><div></div>');
 });
+test('legacy raw-text conversion requires a complete matching closing tag',()=>{
+ const c={};vm.runInNewContext(definition('src/jqLite.js','jqLiteExpandXHTML')+';this.expand=jqLiteExpandXHTML',c);
+ assert.equal(c.expand('<style>literal</stylex><div/></style><span/>'),'<style>literal</stylex><div/></style><span></span>');
+ assert.equal(c.expand('<svg/><div/>'),'<svg/><div></div>');
+ assert.equal(c.expand('<plaintext>literal</plaintext><div/>'),'<plaintext>literal</plaintext><div/>');
+});
